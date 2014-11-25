@@ -17,5 +17,8 @@ int main()
     p_detector.DetectPlate(in_img, plates);
 
     cv::imshow("Input image", in_img);
+    //show all detected plate images
+    for (int i=0; i<plates.size();i++)
+        cv::imshow("Detected plate image", plates[i]);
     waitKey(0);
 }
