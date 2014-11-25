@@ -17,7 +17,7 @@ public:
     ~PlateDetector();
 
     //Detect the region containing plate from input image
-    void DetectPlate(const cv::Mat& in_img);
+    void DetectPlate(const cv::Mat& in_img, std::vector<cv::Mat>& plate_img);
 
 private:
 

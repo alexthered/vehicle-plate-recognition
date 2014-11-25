@@ -15,11 +15,14 @@ PlateDetector::~PlateDetector()
 
 }
 
-void PlateDetector::DetectPlate(const cv::Mat &_in_img)
+void PlateDetector::DetectPlate(const cv::Mat &_in_img, std::vector<cv::Mat>& plate_img)
 {
     in_img = _in_img.clone(); //clone the input image
     PreprocessImg(in_img);
     DetectRegion(gray_img);
+
+    //copy plate image to output file
+    plate_img = plates;
 
 #if VERBOSE_MODE //show all intermediate results
     cv::imshow("grayscale image after smoothing", gray_img);
