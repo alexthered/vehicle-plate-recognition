@@ -24,8 +24,10 @@ private:
     //pre-process the input image
     void PreprocessImg(const cv::Mat& in_img);
     void DetectRegion(const cv::Mat& gray_img);
+    int VerifyRegion(const cv::Rect rect);
 
     //buffer to store intermediate results
+    cv::Mat in_img;
     cv::Mat gray_img;
     cv::Mat preprocessed_img;
     cv::Mat sobel_img;
