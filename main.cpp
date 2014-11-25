@@ -1,4 +1,5 @@
 #include "platedetector.h"
+#include <opencv2/highgui/highgui.hpp>
 
 using namespace std;
 using namespace cv;

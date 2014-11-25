@@ -1,13 +1,13 @@
 #include "platedetector.h"
+#include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
-#include <vector>
-
 
 using namespace std;
 using namespace cv;
 //ctor
 PlateDetector::PlateDetector()
 {
+    enlarge_factor = 1.05;
 }
 
 PlateDetector::~PlateDetector()
@@ -56,7 +56,7 @@ void PlateDetector::DetectRegion(const cv::Mat& gray_img)
 
     //get list of connected component
     vector< vector<Point> > contours;
-    vector<RotatedRect> boundingRect;
+    vector<Rect> boundingRect;
     findContours(threshold_img.clone(), contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
 
     //iterate over the list of contour and find the bounding rectangle
@@ -68,7 +68,13 @@ void PlateDetector::DetectRegion(const cv::Mat& gray_img)
         if (!VerifyRegion(cur_rect)){
             iter = contours.erase(iter); //remove this region
         } else {
-            boundingRect.push_back(rect);
+            //enlarge a rectangle a bit
+            EnlargeRect(cur_rect);
+            boundingRect.push_back(cur_rect);
+
+            //crop the image region containing the plate image
+            Mat plate_img = in_img(cur_rect);
+            plates.push_back(plate_img);
             iter++;
         }
     }
@@ -76,10 +82,9 @@ void PlateDetector::DetectRegion(const cv::Mat& gray_img)
 #if VERBOSE_MODE
     //superposition the detected bounding rect into the input image
     for (int i=0; i<boundingRect.size(); i++){
-        Rect cur_rect= boundingRect[i].boundingRect();
-        cv::rectangle(in_img, cur_rect, Scalar(0,255,0),1,8,0);
+        cv::rectangle(in_img, boundingRect[i], Scalar(0,255,0),1,8,0);
+        imshow("Detected plate image", plates[i]);
     }
-
     imshow("Input image with detected plate", in_img);
 #endif
 }
@@ -103,4 +108,21 @@ int PlateDetector::VerifyRegion(const cv::Rect rect)
         return 0;
 
     return 1;
+}
+
+//enlarge a rectangle to contain all the letters and numbers
+//TODO: clip the enlarged region if it goes beyond the image border
+//TODO: better way to enlarge: floodfil algorithm to include all pixels with white background
+void PlateDetector::EnlargeRect(cv::Rect& rect)
+{
+    float center_x = float(rect.x) + float(rect.width)/2.0;
+    float center_y = float(rect.y) + float(rect.height)/2.0;
+
+    //get new size
+    rect.width = int(enlarge_factor*float(rect.width)+0.5);
+    rect.height= int(enlarge_factor*float(rect.height)+0.5);
+
+    //get new top-left corner's coordinates
+    rect.x = int(center_x - float(rect.width)/2.0 + 0.5);
+    rect.y = int(center_y - float(rect.height)/2.0 + 0.5);
 }
