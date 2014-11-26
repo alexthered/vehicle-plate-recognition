@@ -19,9 +19,10 @@ public:
 
 private:
     void ExtractCharacterImages(const cv::Mat& in_plate_gray);
+    int VerifyCharacterRegion(const cv::Mat character_img);
 
     cv::Mat gray_plate, threshold_gray_plate;
-    std::vector<cv::Mat> character_img;
+    std::vector<cv::Mat> character_imgs;
 };
 
 #endif // PLATERECOGNIZER_H
