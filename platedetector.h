@@ -1,9 +1,11 @@
 #ifndef PLATEDETECTOR_H
 #define PLATEDETECTOR_H
 
+#pragma once
 #include "opencv2/core/core.hpp"
-#include <iostream>
 #include <vector>
+#include <iostream>
+
 
 /**
  * Extract region containg plate from an input image
@@ -31,9 +33,9 @@ private:
     cv::Mat in_img;
     cv::Mat gray_img;
     cv::Mat preprocessed_img;
-    cv::Mat sobel_img;
+    cv::Mat x_sobel_img, y_sobel_img; //horizontal and vertical gradient image
     cv::Mat threshold_img;
-    std::vector<cv::Mat> plates; //vector to store all regions containing plate images
+    std::vector<cv::Mat> plates;
 
     //other constants
     float enlarge_factor;

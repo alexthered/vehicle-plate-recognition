@@ -25,9 +25,9 @@ void PlateDetector::DetectPlate(const cv::Mat &_in_img, std::vector<cv::Mat>& pl
     plate_img = plates;
 
 #if VERBOSE_MODE //show all intermediate results
-    cv::imshow("grayscale image after smoothing", gray_img);
-    cv::imshow("grayscale image after histogram equalization", gray_img);
-    cv::imshow("grayscale image after sobel", sobel_img);
+    cv::imshow("grayscale image after pre-processing", gray_img);
+    cv::imshow("horizontal gradient image", x_sobel_img);
+    cv::imshow("vertical gradient image", y_sobel_img);
     cv::imshow("grayscale image after Otsu thresholding and closing operator", threshold_img);
 #endif
 }
@@ -38,21 +38,20 @@ void PlateDetector::PreprocessImg(const cv::Mat& in_img)
     cvtColor(in_img, gray_img, CV_RGB2GRAY);
 
     //gaussian smoothing
-    GaussianBlur(gray_img, gray_img, cv::Size(5,5), 0.5, 0.5);
-
-    //histogram equalization (not sure it's needed)
-    equalizeHist(gray_img, gray_img);
+    GaussianBlur(gray_img, gray_img, cv::Size(7,7), 1.0, 1.0);;
 }
 
 //detect regions which are possible to contain plate
 void PlateDetector::DetectRegion(const cv::Mat& gray_img)
 {
-    //apply sobel filter to reveal region with big number of vertical edges
-    Sobel(gray_img, sobel_img, CV_8U, 1, 0, 3, 1, 0);
+    //apply sobel filter to reveal horizontal and vertical gradient image
+    Sobel(gray_img, x_sobel_img, CV_8U, 1, 0, 3, 1, 0);
+    Sobel(gray_img, y_sobel_img, CV_8U, 0, 1, 3, 1, 0);
 
     //threshold the image using Otsu's algorithm
-    threshold(sobel_img, threshold_img, 0, 255, CV_THRESH_OTSU+CV_THRESH_BINARY);
 
+    //threshold(x_sobel_img, threshold_img, 0, 255, CV_THRESH_OTSU+CV_THRESH_BINARY);
+    /*
     //apply closing operator
     Mat ele = getStructuringElement(MORPH_RECT, Size(10,3)); //horizontal closing
     morphologyEx(threshold_img, threshold_img, CV_MOP_CLOSE, ele);
@@ -81,14 +80,15 @@ void PlateDetector::DetectRegion(const cv::Mat& gray_img)
             iter++;
         }
     }
+    */
 
 #if VERBOSE_MODE
     //superposition the detected bounding rect into the input image
-    for (int i=0; i<boundingRect.size(); i++){
-        cv::rectangle(in_img, boundingRect[i], Scalar(0,255,0),1,8,0);
-        imshow("Detected plate image", plates[i]);
-    }
-    imshow("Input image with detected plate", in_img);
+    //for (int i=0; i<boundingRect.size(); i++){
+        //cv::rectangle(in_img, boundingRect[i], Scalar(0,255,0),1,8,0);
+        //imshow("Detected plate image", plates[i]);
+    //}
+    //imshow("Input image with detected plate", in_img);
 #endif
 }
 
