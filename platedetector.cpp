@@ -18,6 +18,8 @@ PlateDetector::~PlateDetector()
 void PlateDetector::DetectPlate(const cv::Mat &_in_img, std::vector<cv::Mat>& plate_img)
 {
     in_img = _in_img.clone(); //clone the input image
+    img_size =  Size(in_img.cols, in_img.rows); //get input image'size
+
     PreprocessImg(in_img);
     DetectRegion(gray_img);
 
@@ -25,10 +27,9 @@ void PlateDetector::DetectPlate(const cv::Mat &_in_img, std::vector<cv::Mat>& pl
     plate_img = plates;
 
 #if VERBOSE_MODE //show all intermediate results
-    cv::imshow("grayscale image after pre-processing", gray_img);
+    cv::imshow("grayscale image after Gaussian blur", gray_img);
     cv::imshow("horizontal gradient image", x_sobel_img);
     cv::imshow("vertical gradient image", y_sobel_img);
-    cv::imshow("grayscale image after Otsu thresholding and closing operator", threshold_img);
 #endif
 }
 
@@ -47,6 +48,13 @@ void PlateDetector::DetectRegion(const cv::Mat& gray_img)
     //apply sobel filter to reveal horizontal and vertical gradient image
     Sobel(gray_img, x_sobel_img, CV_8U, 1, 0, 3, 1, 0);
     Sobel(gray_img, y_sobel_img, CV_8U, 0, 1, 3, 1, 0);
+
+    /**
+     *Now project the edge image into x and y axis
+     */
+    //QVector to store the sum of each column and row
+    QVector<double> col_sum(img_size.width), row_sum(img_size.height);
+
 
     //threshold the image using Otsu's algorithm
 
@@ -90,6 +98,27 @@ void PlateDetector::DetectRegion(const cv::Mat& gray_img)
     //}
     //imshow("Input image with detected plate", in_img);
 #endif
+}
+
+// calculate the sum of each column or row in a Mat
+void PlateDetector::CalDimSum(const cv::Mat gra_img, QVector<double>& dim_sum, int dim)
+{
+    gra_img.convertTo(gra_img, CV_32F);
+    Mat m_sum;
+    if (dim == 0)
+        m_sum = Mat(1, gra_img.cols, CV_32F);
+    else
+        m_sum = Mat(gra_img.rows, 1, CV_32F);
+
+    cv::reduce(gra_img, m_sum, dim, CV_REDUCE_SUM);
+
+    double* data = m_sum.data;  //fast access to Mat's data
+    for(int i=0; i<dim_sum.size(); i++){
+        dim_sum[i] = data[i];
+    }
+
+    //convert back
+    gra_img.convertTo(gra_img, CV_8U);
 }
 
 //verify if a region is possible to contain a plate

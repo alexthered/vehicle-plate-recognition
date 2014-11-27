@@ -5,6 +5,7 @@
 #include "opencv2/core/core.hpp"
 #include <vector>
 #include <iostream>
+#include <QVector>
 
 
 /**
@@ -28,6 +29,8 @@ private:
     void DetectRegion(const cv::Mat& gray_img);
     int VerifyRegion(const cv::Rect rect);
     void EnlargeRect(cv::Rect& rect);
+    //calculate the sum of each row or column
+    void CalDimSum(const cv::Mat gra_img, QVector<double>& dim_sum, int dim);
 
     //buffer to store intermediate results
     cv::Mat in_img;
@@ -39,6 +42,8 @@ private:
 
     //other constants
     float enlarge_factor;
+    //input image'size
+    cv::Size img_size;
 };
 
 #endif // IMGPREPROCESSOR_H
