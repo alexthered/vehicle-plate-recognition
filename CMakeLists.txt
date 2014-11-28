@@ -15,6 +15,7 @@ option( VERBOSE "Display intermediate results" ON )
 #
 set( 3RDPARTY_DIR "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty" )
 set( PLOTDRAWING_DIR "${CMAKE_CURRENT_SOURCE_DIR}/PlotDrawing")
+
 #OpenCV
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_DIRS})
@@ -34,14 +35,11 @@ file (GLOB TOP_SRCS
      ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
      )
 
-#add 3rd-party folder
-add_subdirectory( ${3RDPARTY_DIR}/QCustomPlot )
-include_directories( ${3RDPARTY_DIR}/QCustomPlot )
 #
 # add PlotWindow module
 #
-SET(plotwindow_SOURCES ${PLOTDRAWING_DIR}/plotwindow.cpp)
-SET(plotwindow_HEADERS ${PLOTDRAWING_DIR}/plotwindow.h)
+SET(plotwindow_SOURCES ${PLOTDRAWING_DIR}/plotwindow.cpp ${3RDPARTY_DIR}/QCustomPlot/qcustomplot.cpp)
+SET(plotwindow_HEADERS ${PLOTDRAWING_DIR}/plotwindow.h ${3RDPARTY_DIR}/QCustomPlot/qcustomplot.h)
 SET(plotwindow_FORMS ${PLOTDRAWING_DIR}/mainwindow.ui)
 
 QT4_WRAP_CPP(plotwindow_HEADERS_MOC ${plotwindow_HEADERS})
