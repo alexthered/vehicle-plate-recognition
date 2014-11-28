@@ -39,17 +39,17 @@
 **                                                                                                         **
 *************************************************************************************************************/
 
-#include "mainwindow.h"
-#include "ui_mainwindow.h"
+#include "plotwindow.h"
+#include "ui_plotwindow.h"
 #include <QDebug>
 #include <QDesktopWidget>
 #include <QScreen>
 #include <QMessageBox>
 #include <QMetaEnum>
 
-MainWindow::MainWindow(QWidget *parent) :
+PlotWindow::PlotWindow(QWidget *parent) :
   QMainWindow(parent),
-  ui(new Ui::MainWindow)
+  ui(new Ui::PlotWindow)
 {
   ui->setupUi(this);
   setGeometry(400, 250, 542, 390);
@@ -81,7 +81,7 @@ MainWindow::MainWindow(QWidget *parent) :
   //QTimer::singleShot(4000, this, SLOT(screenShot()));
 }
 
-void MainWindow::setupDemo(int demoIndex)
+void PlotWindow::setupDemo(int demoIndex)
 {
   switch (demoIndex)
   {
@@ -111,7 +111,7 @@ void MainWindow::setupDemo(int demoIndex)
   ui->customPlot->replot();
 }
 
-void MainWindow::setupQuadraticDemo(QCustomPlot *customPlot)
+void PlotWindow::setupQuadraticDemo(QCustomPlot *customPlot)
 {
   demoName = "Quadratic Demo";
   // generate some data:
@@ -132,7 +132,7 @@ void MainWindow::setupQuadraticDemo(QCustomPlot *customPlot)
   customPlot->yAxis->setRange(0, 1);
 }
 
-void MainWindow::setupSimpleDemo(QCustomPlot *customPlot)
+void PlotWindow::setupSimpleDemo(QCustomPlot *customPlot)
 {
   demoName = "Simple Demo";
   
@@ -171,7 +171,7 @@ void MainWindow::setupSimpleDemo(QCustomPlot *customPlot)
   customPlot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables);
 }
 
-void MainWindow::setupSincScatterDemo(QCustomPlot *customPlot)
+void PlotWindow::setupSincScatterDemo(QCustomPlot *customPlot)
 {
   demoName = "Sinc Scatter Demo";
   customPlot->legend->setVisible(true);
@@ -248,7 +248,7 @@ void MainWindow::setupSincScatterDemo(QCustomPlot *customPlot)
   customPlot->axisRect()->setupFullAxesBox();
 }
 
-void MainWindow::setupScatterStyleDemo(QCustomPlot *customPlot)
+void PlotWindow::setupScatterStyleDemo(QCustomPlot *customPlot)
 {
   demoName = "Scatter Style Demo";
   customPlot->legend->setVisible(true);
@@ -312,7 +312,7 @@ void MainWindow::setupScatterStyleDemo(QCustomPlot *customPlot)
   customPlot->axisRect()->setupFullAxesBox();
 }
 
-void MainWindow::setupLineStyleDemo(QCustomPlot *customPlot)
+void PlotWindow::setupLineStyleDemo(QCustomPlot *customPlot)
 {
   demoName = "Line Style Demo";
   customPlot->legend->setVisible(true);
@@ -352,7 +352,7 @@ void MainWindow::setupLineStyleDemo(QCustomPlot *customPlot)
   customPlot->axisRect()->setupFullAxesBox();
 }
 
-void MainWindow::setupScatterPixmapDemo(QCustomPlot *customPlot)
+void PlotWindow::setupScatterPixmapDemo(QCustomPlot *customPlot)
 {
   demoName = "Scatter Pixmap Demo";
   customPlot->axisRect()->setBackground(QPixmap("./solarpanels.jpg"));
@@ -399,7 +399,7 @@ void MainWindow::setupScatterPixmapDemo(QCustomPlot *customPlot)
   customPlot->legend->setVisible(true);
 }
 
-void MainWindow::setupDateDemo(QCustomPlot *customPlot)
+void PlotWindow::setupDateDemo(QCustomPlot *customPlot)
 {
   demoName = "Date Demo";
   // set locale to english, so we get english month names:
@@ -460,7 +460,7 @@ void MainWindow::setupDateDemo(QCustomPlot *customPlot)
   customPlot->legend->setVisible(true);
 }
 
-void MainWindow::setupTextureBrushDemo(QCustomPlot *customPlot)
+void PlotWindow::setupTextureBrushDemo(QCustomPlot *customPlot)
 {
   demoName = "Texture Brush Demo";
   // add two graphs with a textured fill:
@@ -505,7 +505,7 @@ void MainWindow::setupTextureBrushDemo(QCustomPlot *customPlot)
   customPlot->axisRect()->setupFullAxesBox();
 }
 
-void MainWindow::setupMultiAxisDemo(QCustomPlot *customPlot)
+void PlotWindow::setupMultiAxisDemo(QCustomPlot *customPlot)
 {
   customPlot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
   demoName = "Multi Axis Demo";
@@ -628,7 +628,7 @@ void MainWindow::setupMultiAxisDemo(QCustomPlot *customPlot)
   customPlot->yAxis2->setSubTickLength(1, 1);
 }
 
-void MainWindow::setupLogarithmicDemo(QCustomPlot *customPlot)
+void PlotWindow::setupLogarithmicDemo(QCustomPlot *customPlot)
 {
   demoName = "Logarithmic Demo";
   customPlot->setNoAntialiasingOnDrag(true); // more performance/responsiveness during dragging
@@ -707,7 +707,7 @@ void MainWindow::setupLogarithmicDemo(QCustomPlot *customPlot)
   customPlot->axisRect()->insetLayout()->setInsetAlignment(0, Qt::AlignLeft|Qt::AlignTop); // make legend align in top left corner or axis rect
 }
 
-void MainWindow::setupRealtimeDataDemo(QCustomPlot *customPlot)
+void PlotWindow::setupRealtimeDataDemo(QCustomPlot *customPlot)
 {
 #if QT_VERSION < QT_VERSION_CHECK(4, 7, 0)
   QMessageBox::critical(this, "", "You're using Qt < 4.7, the realtime data demo needs functions that are available with Qt 4.7 to work properly");
@@ -755,7 +755,7 @@ void MainWindow::setupRealtimeDataDemo(QCustomPlot *customPlot)
   dataTimer.start(0); // Interval 0 means to refresh as fast as possible
 }
 
-void MainWindow::setupParametricCurveDemo(QCustomPlot *customPlot)
+void PlotWindow::setupParametricCurveDemo(QCustomPlot *customPlot)
 {
   demoName = "Parametric Curves Demo";
   
@@ -803,7 +803,7 @@ void MainWindow::setupParametricCurveDemo(QCustomPlot *customPlot)
   customPlot->rescaleAxes();
 }
 
-void MainWindow::setupBarChartDemo(QCustomPlot *customPlot)
+void PlotWindow::setupBarChartDemo(QCustomPlot *customPlot)
 {
   demoName = "Bar Chart Demo";
   // create empty bar chart objects:
@@ -881,7 +881,7 @@ void MainWindow::setupBarChartDemo(QCustomPlot *customPlot)
   customPlot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
 }
 
-void MainWindow::setupStatisticalDemo(QCustomPlot *customPlot)
+void PlotWindow::setupStatisticalDemo(QCustomPlot *customPlot)
 {
   demoName = "Statistical Demo";
   // create empty statistical box plottables:
@@ -937,7 +937,7 @@ void MainWindow::setupStatisticalDemo(QCustomPlot *customPlot)
   customPlot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
 }
 
-void MainWindow::setupSimpleItemDemo(QCustomPlot *customPlot)
+void PlotWindow::setupSimpleItemDemo(QCustomPlot *customPlot)
 {
   demoName = "Simple Item Demo";
   customPlot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
@@ -960,7 +960,7 @@ void MainWindow::setupSimpleItemDemo(QCustomPlot *customPlot)
   arrow->setHead(QCPLineEnding::esSpikeArrow);
 }
 
-void MainWindow::setupItemDemo(QCustomPlot *customPlot)
+void PlotWindow::setupItemDemo(QCustomPlot *customPlot)
 {
 #if QT_VERSION < QT_VERSION_CHECK(4, 7, 0)
   QMessageBox::critical(this, "", "You're using Qt < 4.7, the animation of the item demo needs functions that are available with Qt 4.7 to work properly");
@@ -1093,7 +1093,7 @@ void MainWindow::setupItemDemo(QCustomPlot *customPlot)
   dataTimer.start(0); // Interval 0 means to refresh as fast as possible
 }
 
-void MainWindow::setupStyledDemo(QCustomPlot *customPlot)
+void PlotWindow::setupStyledDemo(QCustomPlot *customPlot)
 {
   demoName = "Styled Demo";
   
@@ -1193,7 +1193,7 @@ void MainWindow::setupStyledDemo(QCustomPlot *customPlot)
   customPlot->yAxis->setRange(0, 2);
 }
 
-void MainWindow::setupAdvancedAxesDemo(QCustomPlot *customPlot)
+void PlotWindow::setupAdvancedAxesDemo(QCustomPlot *customPlot)
 {
   demoName = "Advanced Axes Demo";
   
@@ -1297,7 +1297,7 @@ void MainWindow::setupAdvancedAxesDemo(QCustomPlot *customPlot)
   wideAxisRect->axis(QCPAxis::atLeft, 1)->setRangeLower(0);
 }
 
-void MainWindow::setupColorMapDemo(QCustomPlot *customPlot)
+void PlotWindow::setupColorMapDemo(QCustomPlot *customPlot)
 {
   demoName = "Color Map Demo";
   
@@ -1351,7 +1351,7 @@ void MainWindow::setupColorMapDemo(QCustomPlot *customPlot)
   customPlot->rescaleAxes();
 }
 
-void MainWindow::realtimeDataSlot()
+void PlotWindow::realtimeDataSlot()
 {
   // calculate two new data points:
 #if QT_VERSION < QT_VERSION_CHECK(4, 7, 0)
@@ -1400,7 +1400,7 @@ void MainWindow::realtimeDataSlot()
   }
 }
 
-void MainWindow::bracketDataSlot()
+void PlotWindow::bracketDataSlot()
 {
 #if QT_VERSION < QT_VERSION_CHECK(4, 7, 0)
   double secs = 0;
@@ -1441,17 +1441,17 @@ void MainWindow::bracketDataSlot()
   }
 }
 
-void MainWindow::setupPlayground(QCustomPlot *customPlot)
+void PlotWindow::setupPlayground(QCustomPlot *customPlot)
 {
   Q_UNUSED(customPlot)
 }
 
-MainWindow::~MainWindow()
+PlotWindow::~PlotWindow()
 {
   delete ui;
 }
 
-void MainWindow::screenShot()
+void PlotWindow::screenShot()
 {
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
   QPixmap pm = QPixmap::grabWindow(qApp->desktop()->winId(), this->x()+2, this->y()+2, this->frameGeometry().width()-4, this->frameGeometry().height()-4);
@@ -1464,7 +1464,7 @@ void MainWindow::screenShot()
   qApp->quit();
 }
 
-void MainWindow::allScreenShots()
+void PlotWindow::allScreenShots()
 {
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
   QPixmap pm = QPixmap::grabWindow(qApp->desktop()->winId(), this->x()+2, this->y()+2, this->frameGeometry().width()-4, this->frameGeometry().height()-4);

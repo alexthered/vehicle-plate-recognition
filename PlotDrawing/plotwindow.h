@@ -39,24 +39,24 @@
 **                                                                                                         **
 *************************************************************************************************************/
 
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
+#ifndef PLOTWINDOW_H
+#define PLOTWINDOW_H
 
 #include <QMainWindow>
 #include <QTimer>
-#include "../../qcustomplot.h" // the header file of QCustomPlot. Don't forget to add it to your project, if you use an IDE, so it gets compiled.
+#include "../../3rdparty/QCustomPlot/qcustomplot.h"
 
 namespace Ui {
-class MainWindow;
+class PlotWindow;
 }
 
-class MainWindow : public QMainWindow
+class PlotWindow : public QMainWindow
 {
   Q_OBJECT
   
 public:
-  explicit MainWindow(QWidget *parent = 0);
-  ~MainWindow();
+  explicit PlotWindow(QWidget *parent = 0);
+  ~PlotWindow();
   
   void setupDemo(int demoIndex);
   void setupQuadraticDemo(QCustomPlot *customPlot);
@@ -88,7 +88,7 @@ private slots:
   void allScreenShots();
   
 private:
-  Ui::MainWindow *ui;
+  Ui::PlotWindow *ui;
   QString demoName;
   QTimer dataTimer;
   QCPItemTracer *itemDemoPhaseTracer;
