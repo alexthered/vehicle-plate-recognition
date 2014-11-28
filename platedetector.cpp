@@ -54,6 +54,8 @@ void PlateDetector::DetectRegion(const cv::Mat& gray_img)
      */
     //QVector to store the sum of each column and row
     QVector<double> col_sum(img_size.width), row_sum(img_size.height);
+    CalDimSum(x_sobel_img, row_sum, 0);
+    CalDimSum(y_sobel_img, col_sum, 1);
 
 
     //threshold the image using Otsu's algorithm
@@ -103,22 +105,24 @@ void PlateDetector::DetectRegion(const cv::Mat& gray_img)
 // calculate the sum of each column or row in a Mat
 void PlateDetector::CalDimSum(const cv::Mat gra_img, QVector<double>& dim_sum, int dim)
 {
-    gra_img.convertTo(gra_img, CV_32F);
-    Mat m_sum;
-    if (dim == 0)
-        m_sum = Mat(1, gra_img.cols, CV_32F);
-    else
-        m_sum = Mat(gra_img.rows, 1, CV_32F);
-
-    cv::reduce(gra_img, m_sum, dim, CV_REDUCE_SUM);
-
-    double* data = m_sum.data;  //fast access to Mat's data
-    for(int i=0; i<dim_sum.size(); i++){
-        dim_sum[i] = data[i];
+    Mat img;
+    if (dim == 0) //calculate sum of each row
+        img = gra_img.clone();
+    else if (dim == 1) //calculate sum of each column -> transpose input
+        cv::transpose(gra_img, img);
+    else {
+        std::cout << "Unrecognized dimension flag!" << std::endl;
+        return;
     }
 
-    //convert back
-    gra_img.convertTo(gra_img, CV_8U);
+    for(int i = 0; i < img.rows; i++)
+    {
+        const uchar* Mi = img.ptr<uchar>(i);
+        double sum=0;
+        for(int j = 0; j < img.cols; j++)
+            sum += double(Mi[j]);
+        dim_sum[i] = sum;
+    }
 }
 
 //verify if a region is possible to contain a plate
