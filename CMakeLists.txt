@@ -16,6 +16,15 @@ option( VERBOSE "Display intermediate results" ON )
 set( 3RDPARTY_DIR "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty" )
 set( PLOTDRAWING_DIR "${CMAKE_CURRENT_SOURCE_DIR}/PlotDrawing")
 
+
+#
+# Project definition
+#
+if( VERBOSE )
+message( STATUS "Verbose mode: ON" )
+add_definitions( -DVERBOSE_MODE )
+endif()
+
 #OpenCV
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_DIRS})
@@ -40,7 +49,7 @@ file (GLOB TOP_SRCS
 #
 SET(plotwindow_SOURCES ${PLOTDRAWING_DIR}/plotwindow.cpp ${3RDPARTY_DIR}/QCustomPlot/qcustomplot.cpp)
 SET(plotwindow_HEADERS ${PLOTDRAWING_DIR}/plotwindow.h ${3RDPARTY_DIR}/QCustomPlot/qcustomplot.h)
-SET(plotwindow_FORMS ${PLOTDRAWING_DIR}/mainwindow.ui)
+SET(plotwindow_FORMS ${PLOTDRAWING_DIR}/plotwindow.ui)
 
 QT4_WRAP_CPP(plotwindow_HEADERS_MOC ${plotwindow_HEADERS})
 QT4_WRAP_UI(plotwindow_FORMS_HEADERS ${plotwindow_FORMS})
