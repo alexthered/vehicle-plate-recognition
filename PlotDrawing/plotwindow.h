@@ -45,6 +45,7 @@
 #include <QMainWindow>
 #include <QTimer>
 #include "../../3rdparty/QCustomPlot/qcustomplot.h"
+#include <QPair>
 
 namespace Ui {
 class PlotWindow;
@@ -59,6 +60,8 @@ public:
   ~PlotWindow();
 
   void plot(const QVector<double> x, const QVector<double> y, const QString title);
+  void plotSegment(const QVector<QPair<int, int> > segment);
+  void display();
 
 private:
   Ui::PlotWindow *ui;

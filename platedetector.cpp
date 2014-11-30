@@ -2,6 +2,7 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include <QApplication>
+#include <QPair>
 
 using namespace std;
 using namespace cv;
@@ -12,6 +13,11 @@ PlateDetector::PlateDetector()
     n_plot = 2;
     cur_plot = 0;
     w = new PlotWindow[n_plot];
+    threshold = 0.66666;
+
+    //allocate memory for the projection
+    //col_sum = QVector<double>(img_size.width);
+    //row_sum = QVector<double>(img_size.height);
 }
 
 PlateDetector::~PlateDetector()
@@ -58,55 +64,15 @@ void PlateDetector::DetectRegion(const cv::Mat& gray_img)
     /**
      *Now project the edge image into x and y axis
      */
-    //QVector to store the sum of each column and row
-    QVector<double> col_sum(img_size.width), row_sum(img_size.height);
     CalDimSum(x_sobel_img, row_sum, 0);
     CalDimSum(y_sobel_img, col_sum, 1);
 
+    //normalize the result
+    NormalizeVectorAndFindSegment(row_sum, row_segment);
+    NormalizeVectorAndFindSegment(col_sum, col_segment);
 
-    QVector<double> row_idx(img_size.height), col_idx(img_size.width);
-    for (int i=0; i<img_size.height; i++){
-        row_idx[i] = i;
-    }
-    for (int i=0; i<img_size.width; i++){
-        col_idx[i] = i;
-    }
+    Visualize();
 
-    w[cur_plot++].plot(row_idx, row_sum, QString("Horizontal projection"));
-    w[cur_plot++].plot(col_idx, col_sum, QString("Vertical projection"));
-    //threshold the image using Otsu's algorithm
-
-    //threshold(x_sobel_img, threshold_img, 0, 255, CV_THRESH_OTSU+CV_THRESH_BINARY);
-    /*
-    //apply closing operator
-    Mat ele = getStructuringElement(MORPH_RECT, Size(10,3)); //horizontal closing
-    morphologyEx(threshold_img, threshold_img, CV_MOP_CLOSE, ele);
-
-    //get list of connected component
-    vector< vector<Point> > contours;
-    vector<Rect> boundingRect;
-    findContours(threshold_img.clone(), contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
-
-    //iterate over the list of contour and find the bounding rectangle
-    vector< vector<Point> >::iterator iter = contours.begin();
-    while(iter!=contours.end()){
-        //get the minimum area bounding rectangle
-        RotatedRect rect = minAreaRect(Mat(*iter));
-        Rect cur_rect = rect.boundingRect();
-        if (!VerifyRegion(cur_rect)){
-            iter = contours.erase(iter); //remove this region
-        } else {
-            //enlarge a rectangle a bit
-            EnlargeRect(cur_rect);
-            boundingRect.push_back(cur_rect);
-
-            //crop the image region containing the plate image
-            Mat plate_img = in_img(cur_rect);
-            plates.push_back(plate_img);
-            iter++;
-        }
-    }
-    */
 
 #if VERBOSE_MODE
     //superposition the detected bounding rect into the input image
@@ -117,8 +83,13 @@ void PlateDetector::DetectRegion(const cv::Mat& gray_img)
     //imshow("Input image with detected plate", in_img);
 #endif
 }
-
-void PlateDetector::NormalizeVector(QVector<double>& in_vec)
+/**
+ * @brief PlateDetector::NormalizeVectorAndFindSegment
+ * Normalize the projection vector and at the same time,
+ * find the segment where the values are greater than threshold
+ * @param in_vec: vector to normalize
+ */
+void PlateDetector::NormalizeVectorAndFindSegment(QVector<double>& in_vec, QVector<QPair<int, int> >& segment)
 {
     QVector<double>::iterator iter = in_vec.begin();
     double maxVal = 0, minVal = 1000000;
@@ -131,8 +102,21 @@ void PlateDetector::NormalizeVector(QVector<double>& in_vec)
     }
 
     //normalize the vector: map the range of value to [0,1]
-    for(iter=in_vec.begin();iter!=in_vec.end();++iter)
-        (*iter) = ((*iter) - minVal)/(maxVal-minVal);
+    bool in_segment = false;
+    QPair<int, int> cur_segment;
+    for(int i=0; i<in_vec.size();  ++i){
+        in_vec[i] = (in_vec[i] - minVal)/(maxVal-minVal);
+        if (in_vec[i] > threshold && !in_segment){  //start the segment
+            cur_segment.first = i;
+            in_segment = true;
+        }
+        if (in_vec[i] < threshold && in_segment) {  //end the segment
+            cur_segment.second = i;
+            in_segment = false;
+            if (VerifySegment(cur_segment))
+                segment.push_back(cur_segment);  //store the found segment
+        }
+    }
 
 }
 
@@ -155,11 +139,38 @@ void PlateDetector::CalDimSum(const cv::Mat gra_img, QVector<double>& dim_sum, i
         double sum=0;
         for(int j = 0; j < img.cols; j++)
             sum += double(Mi[j]);
-        dim_sum[i] = sum;
+        dim_sum.push_back(sum);
+    }    
+}
+
+//visualize the projection and found segment
+void PlateDetector::Visualize()
+{
+    /* Visualize the projection */
+    QVector<double> row_idx(img_size.height), col_idx(img_size.width);
+    for (int i=0; i<img_size.height; i++){
+        row_idx[i] = i;
+    }
+    for (int i=0; i<img_size.width; i++){
+        col_idx[i] = i;
     }
 
-    //normalize the result
-    NormalizeVector(dim_sum);
+    w[0].plot(row_idx, row_sum, QString("Horizontal projection"));
+    w[1].plot(col_idx, col_sum, QString("Vertical projection"));
+
+    w[0].plotSegment(row_segment);
+    w[1].plotSegment(col_segment);
+
+    w[0].display();
+    w[1].display();
+
+}
+
+//verify if a found segment is valid or not
+int PlateDetector::VerifySegment(const QPair<int, int> in_pair){
+    if ((in_pair.second - in_pair.first) < 10)
+        return 0;
+    return 1;
 }
 
 //verify if a region is possible to contain a plate

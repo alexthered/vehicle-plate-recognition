@@ -78,13 +78,37 @@ void PlotWindow::plot(const QVector<double> x, const QVector<double> y, const QS
     //plot the graph
     setWindowTitle(plot_title);
     statusBar()->clearMessage();
-    ui->customPlot->replot();
-
-    //show the plot
-    show();
+    ui->customPlot->replot();  
 }
 
+//Plot the found segment on the same plot
+void PlotWindow::plotSegment(const QVector<QPair<int, int> > segment)
+{
+    //for each found segment, draw two vertical lines on the graph
+    for (int i=0; i<segment.size(); i++){
+        int begin = segment[i].first;
+        int end = segment[i].second;
 
+        QCPItemStraightLine* line_begin = new QCPItemStraightLine(ui->customPlot);
+        line_begin->setPen(QPen(Qt::red)); //set color to red
+        line_begin->setAntialiased(false);
+        line_begin->point1->setCoords(begin, 0);
+        line_begin->point2->setCoords(begin, 1);
+        ui->customPlot->addItem(line_begin);
+
+        QCPItemStraightLine* line_end = new QCPItemStraightLine(ui->customPlot);
+        line_end->setPen(QPen(Qt::green)); //set color to red
+        line_end->setAntialiased(false);
+        line_end->point1->setCoords(end, 0);
+        line_end->point2->setCoords(end, 1);
+        ui->customPlot->addItem(line_end);
+    }
+}
+
+void PlotWindow::display()
+{
+    show();
+}
 
 
 

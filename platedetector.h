@@ -6,8 +6,8 @@
 #include <vector>
 #include <iostream>
 #include <QVector>
+#include <QPair>
 #include "PlotDrawing/plotwindow.h"
-
 
 /**
  * Extract region containg plate from an input image
@@ -29,11 +29,14 @@ private:
     void PreprocessImg(const cv::Mat& in_img);
     void DetectRegion(const cv::Mat& gray_img);
     int VerifyRegion(const cv::Rect rect);
+    int VerifySegment(const QPair<int, int> in_pair);
     void EnlargeRect(cv::Rect& rect);
     //calculate the sum of each row or column
     void CalDimSum(const cv::Mat gra_img, QVector<double>& dim_sum, int dim);
     //normalize the projection of gradient image
-    void NormalizeVector(QVector<double>& in_vec);
+    void NormalizeVectorAndFindSegment(QVector<double>& in_vec, QVector<QPair<int, int> >& segment);
+    //visualize the projection and found segment
+    void Visualize();
 
     //buffer to store intermediate results
     cv::Mat in_img;
@@ -50,6 +53,11 @@ private:
 
     PlotWindow *w;
     int n_plot, cur_plot;
+
+    double threshold;
+
+    QVector<double> col_sum, row_sum;
+    QVector<QPair<int, int> > col_segment, row_segment;
 };
 
 #endif // IMGPREPROCESSOR_H
