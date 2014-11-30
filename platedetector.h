@@ -6,6 +6,7 @@
 #include <vector>
 #include <iostream>
 #include <QVector>
+#include "PlotDrawing/plotwindow.h"
 
 
 /**
@@ -44,6 +45,9 @@ private:
     float enlarge_factor;
     //input image'size
     cv::Size img_size;
+
+    PlotWindow *w;
+    int n_plot, cur_plot;
 };
 
 #endif // IMGPREPROCESSOR_H

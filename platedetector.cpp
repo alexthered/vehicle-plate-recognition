@@ -1,6 +1,7 @@
 #include "platedetector.h"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
+#include <QApplication>
 
 using namespace std;
 using namespace cv;
@@ -8,15 +9,19 @@ using namespace cv;
 PlateDetector::PlateDetector()
 {
     enlarge_factor = 1.05;
+    n_plot = 2;
+    cur_plot = 0;
+    w = new PlotWindow[n_plot];
 }
 
 PlateDetector::~PlateDetector()
 {
-
+    //delete all plotting windows
+    delete[] w;
 }
 
 void PlateDetector::DetectPlate(const cv::Mat &_in_img, std::vector<cv::Mat>& plate_img)
-{
+{    
     in_img = _in_img.clone(); //clone the input image
     img_size =  Size(in_img.cols, in_img.rows); //get input image'size
 
@@ -27,10 +32,11 @@ void PlateDetector::DetectPlate(const cv::Mat &_in_img, std::vector<cv::Mat>& pl
     plate_img = plates;
 
 #if VERBOSE_MODE //show all intermediate results
-    cv::imshow("grayscale image after Gaussian blur", gray_img);
-    cv::imshow("horizontal gradient image", x_sobel_img);
-    cv::imshow("vertical gradient image", y_sobel_img);
-#endif
+    //cv::imshow("grayscale image after Gaussian blur", gray_img);
+    //cv::imshow("horizontal gradient image", x_sobel_img);
+    //cv::imshow("vertical gradient image", y_sobel_img);
+#endif    
+
 }
 
 //Pre-process the image: grayscale conversion + Gaussian smoothing + histogram equalization
@@ -57,7 +63,16 @@ void PlateDetector::DetectRegion(const cv::Mat& gray_img)
     CalDimSum(x_sobel_img, row_sum, 0);
     CalDimSum(y_sobel_img, col_sum, 1);
 
+    QVector<double> row_idx(img_size.height), col_idx(img_size.width);
+    for (int i=0; i<img_size.height; i++){
+        row_idx[i] = i;
+    }
+    for (int i=0; i<img_size.width; i++){
+        col_idx[i] = i;
+    }
 
+    w[cur_plot++].plot(row_idx, row_sum, QString("Horizontal projection"));
+    w[cur_plot++].plot(col_idx, col_sum, QString("Vertical projection"));
     //threshold the image using Otsu's algorithm
 
     //threshold(x_sobel_img, threshold_img, 0, 255, CV_THRESH_OTSU+CV_THRESH_BINARY);
