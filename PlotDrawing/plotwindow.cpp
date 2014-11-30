@@ -73,7 +73,7 @@ void PlotWindow::plot(const QVector<double> x, const QVector<double> y, const QS
     ui->customPlot->yAxis->setLabel("y");
     // set axes ranges, so we see all data:
     ui->customPlot->xAxis->setRange(0, x.size());
-    ui->customPlot->yAxis->setRange(0, 30000);
+    ui->customPlot->yAxis->setRange(0, 1);
 
     //plot the graph
     setWindowTitle(plot_title);

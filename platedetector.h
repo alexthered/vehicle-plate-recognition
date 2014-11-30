@@ -32,6 +32,8 @@ private:
     void EnlargeRect(cv::Rect& rect);
     //calculate the sum of each row or column
     void CalDimSum(const cv::Mat gra_img, QVector<double>& dim_sum, int dim);
+    //normalize the projection of gradient image
+    void NormalizeVector(QVector<double>& in_vec);
 
     //buffer to store intermediate results
     cv::Mat in_img;

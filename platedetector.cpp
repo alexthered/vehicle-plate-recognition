@@ -33,8 +33,8 @@ void PlateDetector::DetectPlate(const cv::Mat &_in_img, std::vector<cv::Mat>& pl
 
 #if VERBOSE_MODE //show all intermediate results
     //cv::imshow("grayscale image after Gaussian blur", gray_img);
-    //cv::imshow("horizontal gradient image", x_sobel_img);
-    //cv::imshow("vertical gradient image", y_sobel_img);
+    cv::imshow("horizontal gradient image", x_sobel_img);
+    cv::imshow("vertical gradient image", y_sobel_img);
 #endif    
 
 }
@@ -62,6 +62,7 @@ void PlateDetector::DetectRegion(const cv::Mat& gray_img)
     QVector<double> col_sum(img_size.width), row_sum(img_size.height);
     CalDimSum(x_sobel_img, row_sum, 0);
     CalDimSum(y_sobel_img, col_sum, 1);
+
 
     QVector<double> row_idx(img_size.height), col_idx(img_size.width);
     for (int i=0; i<img_size.height; i++){
@@ -117,6 +118,24 @@ void PlateDetector::DetectRegion(const cv::Mat& gray_img)
 #endif
 }
 
+void PlateDetector::NormalizeVector(QVector<double>& in_vec)
+{
+    QVector<double>::iterator iter = in_vec.begin();
+    double maxVal = 0, minVal = 1000000;
+    while(iter!= in_vec.end()){
+        if ((*iter) > maxVal)
+            maxVal = (*iter);
+        if ((*iter) < minVal)
+            minVal = (*iter);
+        ++iter;
+    }
+
+    //normalize the vector: map the range of value to [0,1]
+    for(iter=in_vec.begin();iter!=in_vec.end();++iter)
+        (*iter) = ((*iter) - minVal)/(maxVal-minVal);
+
+}
+
 // calculate the sum of each column or row in a Mat
 void PlateDetector::CalDimSum(const cv::Mat gra_img, QVector<double>& dim_sum, int dim)
 {
@@ -138,6 +157,9 @@ void PlateDetector::CalDimSum(const cv::Mat gra_img, QVector<double>& dim_sum, i
             sum += double(Mi[j]);
         dim_sum[i] = sum;
     }
+
+    //normalize the result
+    NormalizeVector(dim_sum);
 }
 
 //verify if a region is possible to contain a plate
