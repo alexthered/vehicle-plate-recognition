@@ -57,42 +57,12 @@ class PlotWindow : public QMainWindow
 public:
   explicit PlotWindow(QWidget *parent = 0);
   ~PlotWindow();
-  
-  void setupDemo(int demoIndex);
-  void setupQuadraticDemo(QCustomPlot *customPlot);
-  void setupSimpleDemo(QCustomPlot *customPlot);
-  void setupSincScatterDemo(QCustomPlot *customPlot);
-  void setupScatterStyleDemo(QCustomPlot *customPlot);
-  void setupLineStyleDemo(QCustomPlot *customPlot);
-  void setupScatterPixmapDemo(QCustomPlot *customPlot);
-  void setupDateDemo(QCustomPlot *customPlot);
-  void setupTextureBrushDemo(QCustomPlot *customPlot);
-  void setupMultiAxisDemo(QCustomPlot *customPlot);
-  void setupLogarithmicDemo(QCustomPlot *customPlot);
-  void setupRealtimeDataDemo(QCustomPlot *customPlot);
-  void setupParametricCurveDemo(QCustomPlot *customPlot);
-  void setupBarChartDemo(QCustomPlot *customPlot);
-  void setupStatisticalDemo(QCustomPlot *customPlot);
-  void setupSimpleItemDemo(QCustomPlot *customPlot);
-  void setupItemDemo(QCustomPlot *customPlot);
-  void setupStyledDemo(QCustomPlot *customPlot);
-  void setupAdvancedAxesDemo(QCustomPlot *customPlot);
-  void setupColorMapDemo(QCustomPlot *customPlot);
-  
-  void setupPlayground(QCustomPlot *customPlot);
-  
-private slots:
-  void realtimeDataSlot();
-  void bracketDataSlot();
-  void screenShot();
-  void allScreenShots();
-  
+
+  void plot(const QVector<double> x, const QVector<double> y, const QString title);
+
 private:
   Ui::PlotWindow *ui;
-  QString demoName;
-  QTimer dataTimer;
-  QCPItemTracer *itemDemoPhaseTracer;
-  int currentDemoIndex;
+  QString plot_title;
 };
 
 #endif // MAINWINDOW_H
