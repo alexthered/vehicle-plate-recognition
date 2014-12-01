@@ -37,6 +37,9 @@ private:
     void NormalizeVectorAndFindSegment(QVector<double>& in_vec, QVector<QPair<int, int> >& segment);
     //visualize the projection and found segment
     void Visualize();
+    //1D median filter
+    void MedianFilter(QVector<double>& in_vec, int filter_size,
+                       double& minVal, double& maxVal);
 
     //buffer to store intermediate results
     cv::Mat in_img;

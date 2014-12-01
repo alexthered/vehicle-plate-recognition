@@ -3,6 +3,7 @@
 #include "opencv2/imgproc/imgproc.hpp"
 #include <QApplication>
 #include <QPair>
+#include <QString>
 
 using namespace std;
 using namespace cv;
@@ -13,7 +14,7 @@ PlateDetector::PlateDetector()
     n_plot = 2;
     cur_plot = 0;
     w = new PlotWindow[n_plot];
-    threshold = 0.66666;
+    threshold = 0.5;
 
     //allocate memory for the projection
     //col_sum = QVector<double>(img_size.width);
@@ -51,14 +52,14 @@ void PlateDetector::PreprocessImg(const cv::Mat& in_img)
     cvtColor(in_img, gray_img, CV_RGB2GRAY);
 
     //gaussian smoothing
-    GaussianBlur(gray_img, gray_img, cv::Size(7,7), 1.0, 1.0);;
+    GaussianBlur(gray_img, gray_img, cv::Size(7,7), 2.5, 1.5);;
 }
 
 //detect regions which are possible to contain plate
 void PlateDetector::DetectRegion(const cv::Mat& gray_img)
 {
     //apply sobel filter to reveal horizontal and vertical gradient image
-    Sobel(gray_img, x_sobel_img, CV_8U, 1, 0, 3, 1, 0);
+    Sobel(gray_img, x_sobel_img, CV_8U, 1, 1, 3, 1, 0);
     Sobel(gray_img, y_sobel_img, CV_8U, 0, 1, 3, 1, 0);
 
     /**
@@ -71,17 +72,28 @@ void PlateDetector::DetectRegion(const cv::Mat& gray_img)
     NormalizeVectorAndFindSegment(row_sum, row_segment);
     NormalizeVectorAndFindSegment(col_sum, col_segment);
 
-    Visualize();
+    //get all possible regions
+    for (int i=0; i<row_segment.size(); ++i){
+        for(int j=0; j<col_segment.size(); ++j){
+           QPair<int, int> row_range = row_segment[i];
+           QPair<int, int> col_range = col_segment[j];
 
+           cv::Mat cur_plate = in_img(Rect(col_range.first, row_range.first,
+                                           col_range.second - col_range.first,
+                                           row_range.second - row_range.first));
+           plates.push_back(cur_plate);
+        }
+    }
 
-#if VERBOSE_MODE
-    //superposition the detected bounding rect into the input image
-    //for (int i=0; i<boundingRect.size(); i++){
-        //cv::rectangle(in_img, boundingRect[i], Scalar(0,255,0),1,8,0);
-        //imshow("Detected plate image", plates[i]);
-    //}
-    //imshow("Input image with detected plate", in_img);
+#if VERBOSE_MODE  //display all candidate region
+    for (int i=0; i<plates.size(); ++i){
+           QString idx = QString::number(i);
+           QString win_name = "Candidate plate region" + idx;
+           cv::imshow(win_name.toStdString(), plates[i]);
+    }
 #endif
+
+    Visualize();
 }
 /**
  * @brief PlateDetector::NormalizeVectorAndFindSegment
@@ -91,15 +103,9 @@ void PlateDetector::DetectRegion(const cv::Mat& gray_img)
  */
 void PlateDetector::NormalizeVectorAndFindSegment(QVector<double>& in_vec, QVector<QPair<int, int> >& segment)
 {
-    QVector<double>::iterator iter = in_vec.begin();
     double maxVal = 0, minVal = 1000000;
-    while(iter!= in_vec.end()){
-        if ((*iter) > maxVal)
-            maxVal = (*iter);
-        if ((*iter) < minVal)
-            minVal = (*iter);
-        ++iter;
-    }
+    //Apply median filter
+    MedianFilter(in_vec, 5, minVal, maxVal);
 
     //normalize the vector: map the range of value to [0,1]
     bool in_segment = false;
@@ -140,7 +146,8 @@ void PlateDetector::CalDimSum(const cv::Mat gra_img, QVector<double>& dim_sum, i
         for(int j = 0; j < img.cols; j++)
             sum += double(Mi[j]);
         dim_sum.push_back(sum);
-    }    
+    }
+
 }
 
 //visualize the projection and found segment
@@ -171,6 +178,41 @@ int PlateDetector::VerifySegment(const QPair<int, int> in_pair){
     if ((in_pair.second - in_pair.first) < 10)
         return 0;
     return 1;
+}
+
+//perform 1D median vector
+void PlateDetector::MedianFilter(QVector<double>& in_vec, int filter_size,
+                                 double& minVal, double& maxVal)
+{
+    double* window = new double[filter_size];
+
+    int half_filter_size = int(filter_size/2);
+    for(int i=half_filter_size; i<(in_vec.size()-half_filter_size); ++i){
+        //copy related item from
+        for(int j=0; j<filter_size; j++)
+            window[j] = in_vec[i-2+j];
+        //order half of the elements
+        for(int j=0; j<3; j++){
+            int min = j;
+            //get the position of minimum element
+            for (int k=j+1; k<filter_size; k++){
+                if (window[k] < window[min])
+                    min = k;
+                //put the minimum element to the left most one
+                const double tmp = window[j];
+                window[j] = window[min];
+                window[min] = tmp;
+            }
+        }
+        //get the middle element
+        in_vec[i] = window[half_filter_size];
+        //update min and max value
+        if (minVal > in_vec[i])
+            minVal = in_vec[i];
+        if (maxVal < in_vec[i])
+            maxVal = in_vec[i];
+    }
+    delete window;
 }
 
 //verify if a region is possible to contain a plate
