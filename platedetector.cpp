@@ -13,18 +13,14 @@ PlateDetector::PlateDetector()
     enlarge_factor = 1.05;
     n_plot = 2;
     cur_plot = 0;
-    w = new PlotWindow[n_plot];
+    w = new PlotWindow;
     threshold = 0.5;
-
-    //allocate memory for the projection
-    //col_sum = QVector<double>(img_size.width);
-    //row_sum = QVector<double>(img_size.height);
 }
 
 PlateDetector::~PlateDetector()
 {
     //delete all plotting windows
-    delete[] w;
+    delete w;
 }
 
 void PlateDetector::DetectPlate(const cv::Mat &_in_img, std::vector<cv::Mat>& plate_img)
@@ -36,12 +32,12 @@ void PlateDetector::DetectPlate(const cv::Mat &_in_img, std::vector<cv::Mat>& pl
     DetectRegion(gray_img);
 
     //copy plate image to output file
-    plate_img = plates;
+    plate_img = cand_plates;
 
 #if VERBOSE_MODE //show all intermediate results
     //cv::imshow("grayscale image after Gaussian blur", gray_img);
     cv::imshow("horizontal gradient image", x_sobel_img);
-    cv::imshow("vertical gradient image", y_sobel_img);
+    //cv::imshow("vertical gradient image", y_sobel_img);
 #endif    
 
 }
@@ -52,36 +48,62 @@ void PlateDetector::PreprocessImg(const cv::Mat& in_img)
     cvtColor(in_img, gray_img, CV_RGB2GRAY);
 
     //gaussian smoothing
-    GaussianBlur(gray_img, gray_img, cv::Size(7,7), 2.5, 1.5);;
+    GaussianBlur(gray_img, gray_img, cv::Size(7,7), 1.5, 1.5);;
 }
 
 //detect regions which are possible to contain plate
 void PlateDetector::DetectRegion(const cv::Mat& gray_img)
 {
     //apply sobel filter to reveal horizontal and vertical gradient image
-    Sobel(gray_img, x_sobel_img, CV_8U, 1, 1, 3, 1, 0);
-    Sobel(gray_img, y_sobel_img, CV_8U, 0, 1, 3, 1, 0);
+    Sobel(gray_img, x_sobel_img, CV_8U, 1, 0, 3, 1, 0);
 
     /**
      *Now project the edge image into x and y axis
      */
     CalDimSum(x_sobel_img, row_sum, 0);
-    CalDimSum(y_sobel_img, col_sum, 1);
 
     //normalize the result
     NormalizeVectorAndFindSegment(row_sum, row_segment);
-    NormalizeVectorAndFindSegment(col_sum, col_segment);
 
-    //get all possible regions
+
+    //get all possible strip regions which can contain plates
     for (int i=0; i<row_segment.size(); ++i){
-        for(int j=0; j<col_segment.size(); ++j){
-           QPair<int, int> row_range = row_segment[i];
-           QPair<int, int> col_range = col_segment[j];
+        QPair<int, int> row_range = row_segment[i];
+        //QPair<int, int> col_range = col_segment[j];
 
-           cv::Mat cur_plate = in_img(Rect(col_range.first, row_range.first,
-                                           col_range.second - col_range.first,
-                                           row_range.second - row_range.first));
-           plates.push_back(cur_plate);
+        cv::Mat cur_plate = gray_img(Rect(0, row_range.first,
+                                        in_img.cols - 1,
+                                        row_range.second - row_range.first));
+        cand_plates.push_back(cur_plate);
+    }
+
+    /**
+     * for each possible strip gray image, find the region which can
+     * be a plate image
+     */
+    for(int i=0; i<cand_plates.size(); ++i){
+        cv::Mat cur_strip = cand_plates[i];
+        //apply sobel operator
+        Sobel(cur_strip, sobel_strip, CV_8U, 1, 0, 3, 1, 0);
+        //Otsu thresholding
+        cv::threshold(sobel_strip, threshold_strip, 60, 255, CV_THRESH_BINARY);
+        cv::imshow("strip region", threshold_strip);
+        vector< vector<Point> > contours;
+        findContours(threshold_strip .clone(), contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
+        //iterate over the list of contour and find the bounding rectangle
+        vector< vector<Point> >::iterator iter = contours.begin();
+        while(iter!=contours.end()){
+            //get the minimum area bounding rectangle
+            RotatedRect rect = minAreaRect(Mat(*iter));
+            Rect cur_rect = rect.boundingRect();
+            //crop the image region containing the plate image
+            //Mat cur_plate = cur_strip (cur_rect);
+            if (!VerifyRegion(cur_rect)){
+                iter = contours.erase(iter); //remove this region
+            } else {
+                //plates.push_back(cur_plate);
+                iter++;
+            }
         }
     }
 
@@ -105,8 +127,8 @@ void PlateDetector::NormalizeVectorAndFindSegment(QVector<double>& in_vec, QVect
 {
     double maxVal = 0, minVal = 1000000;
     //Apply median filter
-    MedianFilter(in_vec, 5, minVal, maxVal);
-
+    //MedianFilter(in_vec, 5, minVal, maxVal);
+    AvgFilter(in_vec, 9, minVal, maxVal);
     //normalize the vector: map the range of value to [0,1]
     bool in_segment = false;
     QPair<int, int> cur_segment;
@@ -162,22 +184,39 @@ void PlateDetector::Visualize()
         col_idx[i] = i;
     }
 
-    w[0].plot(row_idx, row_sum, QString("Horizontal projection"));
-    w[1].plot(col_idx, col_sum, QString("Vertical projection"));
+    w->plot(row_idx, row_sum, QString("Horizontal projection"));
 
-    w[0].plotSegment(row_segment);
-    w[1].plotSegment(col_segment);
+    w->plotSegment(row_segment);
 
-    w[0].display();
-    w[1].display();
-
+    w->display();
 }
 
 //verify if a found segment is valid or not
 int PlateDetector::VerifySegment(const QPair<int, int> in_pair){
-    if ((in_pair.second - in_pair.first) < 10)
+    if ((in_pair.second - in_pair.first) < 25)
         return 0;
     return 1;
+}
+
+void PlateDetector::AvgFilter(QVector<double>& in_vec, int filter_size,
+                               double& minVal, double& maxVal)
+{
+    int half_filter_size = int(filter_size/2);
+    for(int i=half_filter_size; i<(in_vec.size()-half_filter_size); ++i){
+        //get the sum
+        double sum = 0;
+        for(int j=0; j<filter_size; j++)
+           sum += in_vec[i-half_filter_size+j];
+
+        //get the middle element
+        in_vec[i] = sum/double(filter_size);
+        //update min and max value
+        if (minVal > in_vec[i])
+            minVal = in_vec[i];
+        if (maxVal < in_vec[i])
+            maxVal = in_vec[i];
+    }
+
 }
 
 //perform 1D median vector
@@ -190,7 +229,7 @@ void PlateDetector::MedianFilter(QVector<double>& in_vec, int filter_size,
     for(int i=half_filter_size; i<(in_vec.size()-half_filter_size); ++i){
         //copy related item from
         for(int j=0; j<filter_size; j++)
-            window[j] = in_vec[i-2+j];
+            window[j] = in_vec[i-half_filter_size+j];
         //order half of the elements
         for(int j=0; j<3; j++){
             int min = j;

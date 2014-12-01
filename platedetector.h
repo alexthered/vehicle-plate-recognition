@@ -40,14 +40,19 @@ private:
     //1D median filter
     void MedianFilter(QVector<double>& in_vec, int filter_size,
                        double& minVal, double& maxVal);
+    //1D average filter
+    void AvgFilter(QVector<double>& in_vec, int filter_size,
+                       double& minVal, double& maxVal);
 
     //buffer to store intermediate results
     cv::Mat in_img;
     cv::Mat gray_img;
     cv::Mat preprocessed_img;
     cv::Mat x_sobel_img, y_sobel_img; //horizontal and vertical gradient image
-    cv::Mat threshold_img;
-    std::vector<cv::Mat> plates;
+    cv::Mat threshold_strip, sobel_strip;
+
+    std::vector<cv::Mat> cand_plates; //candidate plates (after first step)
+    std::vector<cv::Mat> plates;      //detected plates (after second step)
 
     //other constants
     float enlarge_factor;
