@@ -7,6 +7,7 @@
 
 using namespace std;
 using namespace cv;
+
 //ctor
 PlateDetector::PlateDetector()
 {
@@ -97,11 +98,11 @@ void PlateDetector::DetectRegion(const cv::Mat& gray_img)
             RotatedRect rect = minAreaRect(Mat(*iter));
             Rect cur_rect = rect.boundingRect();
             //crop the image region containing the plate image
-            //Mat cur_plate = cur_strip (cur_rect);
+            Mat cur_plate = cur_strip (ClipRect(cur_rect, cv::Size(cur_strip.cols,cur_strip.rows)));
             if (!VerifyRegion(cur_rect)){
                 iter = contours.erase(iter); //remove this region
             } else {
-                //plates.push_back(cur_plate);
+                plates.push_back(cur_plate);
                 iter++;
             }
         }
@@ -291,3 +292,4 @@ void PlateDetector::EnlargeRect(cv::Rect& rect)
     rect.x = int(center_x - float(rect.width)/2.0 + 0.5);
     rect.y = int(center_y - float(rect.height)/2.0 + 0.5);
 }
+

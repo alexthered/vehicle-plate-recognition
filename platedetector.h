@@ -8,6 +8,7 @@
 #include <QVector>
 #include <QPair>
 #include "PlotDrawing/plotwindow.h"
+#include "common.h"
 
 /**
  * Extract region containg plate from an input image
