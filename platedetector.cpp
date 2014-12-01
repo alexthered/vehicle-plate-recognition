@@ -88,7 +88,12 @@ void PlateDetector::DetectRegion(const cv::Mat& gray_img)
         Sobel(cur_strip, sobel_strip, CV_8U, 1, 0, 3, 1, 0);
         //Otsu thresholding
         cv::threshold(sobel_strip, threshold_strip, 60, 255, CV_THRESH_BINARY);
+        //apply closing operator
+        cv::Mat ele = cv::getStructuringElement(MORPH_RECT, Size(15,3));
+        morphologyEx(threshold_strip, threshold_strip, CV_MOP_CLOSE, ele);
         cv::imshow("strip region", threshold_strip);
+
+        //collect connected components
         vector< vector<Point> > contours;
         findContours(threshold_strip .clone(), contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
         //iterate over the list of contour and find the bounding rectangle
@@ -146,7 +151,6 @@ void PlateDetector::NormalizeVectorAndFindSegment(QVector<double>& in_vec, QVect
                 segment.push_back(cur_segment);  //store the found segment
         }
     }
-
 }
 
 // calculate the sum of each column or row in a Mat
@@ -197,62 +201,6 @@ int PlateDetector::VerifySegment(const QPair<int, int> in_pair){
     if ((in_pair.second - in_pair.first) < 25)
         return 0;
     return 1;
-}
-
-void PlateDetector::AvgFilter(QVector<double>& in_vec, int filter_size,
-                               double& minVal, double& maxVal)
-{
-    int half_filter_size = int(filter_size/2);
-    for(int i=half_filter_size; i<(in_vec.size()-half_filter_size); ++i){
-        //get the sum
-        double sum = 0;
-        for(int j=0; j<filter_size; j++)
-           sum += in_vec[i-half_filter_size+j];
-
-        //get the middle element
-        in_vec[i] = sum/double(filter_size);
-        //update min and max value
-        if (minVal > in_vec[i])
-            minVal = in_vec[i];
-        if (maxVal < in_vec[i])
-            maxVal = in_vec[i];
-    }
-
-}
-
-//perform 1D median vector
-void PlateDetector::MedianFilter(QVector<double>& in_vec, int filter_size,
-                                 double& minVal, double& maxVal)
-{
-    double* window = new double[filter_size];
-
-    int half_filter_size = int(filter_size/2);
-    for(int i=half_filter_size; i<(in_vec.size()-half_filter_size); ++i){
-        //copy related item from
-        for(int j=0; j<filter_size; j++)
-            window[j] = in_vec[i-half_filter_size+j];
-        //order half of the elements
-        for(int j=0; j<3; j++){
-            int min = j;
-            //get the position of minimum element
-            for (int k=j+1; k<filter_size; k++){
-                if (window[k] < window[min])
-                    min = k;
-                //put the minimum element to the left most one
-                const double tmp = window[j];
-                window[j] = window[min];
-                window[min] = tmp;
-            }
-        }
-        //get the middle element
-        in_vec[i] = window[half_filter_size];
-        //update min and max value
-        if (minVal > in_vec[i])
-            minVal = in_vec[i];
-        if (maxVal < in_vec[i])
-            maxVal = in_vec[i];
-    }
-    delete window;
 }
 
 //verify if a region is possible to contain a plate

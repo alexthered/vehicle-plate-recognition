@@ -13,3 +13,60 @@ cv::Rect ClipRect(cv::Rect rect, cv::Size img_size)
 
     return clipped_rect;
 }
+
+
+void AvgFilter(QVector<double>& in_vec, int filter_size,
+                               double& minVal, double& maxVal)
+{
+    int half_filter_size = int(filter_size/2);
+    for(int i=half_filter_size; i<(in_vec.size()-half_filter_size); ++i){
+        //get the sum
+        double sum = 0;
+        for(int j=0; j<filter_size; j++)
+           sum += in_vec[i-half_filter_size+j];
+
+        //get the middle element
+        in_vec[i] = sum/double(filter_size);
+        //update min and max value
+        if (minVal > in_vec[i])
+            minVal = in_vec[i];
+        if (maxVal < in_vec[i])
+            maxVal = in_vec[i];
+    }
+}
+
+//perform 1D median vector
+void MedianFilter(QVector<double>& in_vec, int filter_size,
+                                 double& minVal, double& maxVal)
+{
+    double* window = new double[filter_size];
+
+    int half_filter_size = int(filter_size/2);
+    for(int i=half_filter_size; i<(in_vec.size()-half_filter_size); ++i){
+        //copy related item from
+        for(int j=0; j<filter_size; j++)
+            window[j] = in_vec[i-half_filter_size+j];
+        //order half of the elements
+        for(int j=0; j<3; j++){
+            int min = j;
+            //get the position of minimum element
+            for (int k=j+1; k<filter_size; k++){
+                if (window[k] < window[min])
+                    min = k;
+                //put the minimum element to the left most one
+                const double tmp = window[j];
+                window[j] = window[min];
+                window[min] = tmp;
+            }
+        }
+        //get the middle element
+        in_vec[i] = window[half_filter_size];
+        //update min and max value
+        if (minVal > in_vec[i])
+            minVal = in_vec[i];
+        if (maxVal < in_vec[i])
+            maxVal = in_vec[i];
+    }
+    delete window;
+}
+

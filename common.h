@@ -9,6 +9,7 @@
 #pragma once
 
 #include "opencv2/core/core.hpp"
+#include <QVector>
 
 
 /**
@@ -17,5 +18,11 @@
  */
 
 cv::Rect ClipRect(cv::Rect rect, cv::Size img_size);
+
+void AvgFilter(QVector<double>& in_vec, int filter_size,
+               double& minVal, double& maxVal);
+
+void MedianFilter(QVector<double>& in_vec, int filter_size,
+                                 double& minVal, double& maxVal);
 
 #endif // COMMON_H
