@@ -12,16 +12,20 @@ using namespace cv;
 PlateDetector::PlateDetector()
 {
     enlarge_factor = 1.05;
+#if PLOT_DISPLAYING
     n_plot = 2;
     cur_plot = 0;
     w = new PlotWindow;
+#endif
     threshold = 0.5;
 }
 
 PlateDetector::~PlateDetector()
 {
+ #if PLOT_DISPLAYING
     //delete all plotting windows
     delete w;
+ #endif
 }
 
 void PlateDetector::DetectPlate(const cv::Mat &_in_img, std::vector<cv::Mat>& plate_img)
@@ -134,7 +138,10 @@ void PlateDetector::DetectRegion(const cv::Mat& gray_img)
     }
 #endif
 
+
+#if PLOT_DISPLAYING
     Visualize();
+#endif
 }
 
 /**
@@ -236,7 +243,7 @@ void PlateDetector::CalDimSum(const cv::Mat gra_img, QVector<double>& dim_sum, i
     }
 
 }
-
+#if PLOT_DISPLAYING
 //visualize the projection and found segment
 void PlateDetector::Visualize()
 {
@@ -255,6 +262,8 @@ void PlateDetector::Visualize()
 
     w->display();
 }
+
+#endif
 
 //verify if a found segment is valid or not
 int PlateDetector::VerifySegment(const QPair<int, int> in_pair){

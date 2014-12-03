@@ -9,7 +9,11 @@ int main(int argc, char* argv[])
 
     //get the application
     App m_app;
-    m_app.Run();
 
+#if PLOT_DISPLAYING
+    m_app.Run();
     return MainApp.exec();
+#else
+    return m_app.Run();
+#endif
 }

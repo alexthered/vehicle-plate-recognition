@@ -9,6 +9,7 @@ cmake_minimum_required( VERSION 2.8 )
 # Project options
 #
 option( VERBOSE "Display intermediate results" ON )
+option( DISPLAY_PLOT "Display the 1D plot of image projection" OFF)
 
 #
 # Project directory
@@ -47,6 +48,9 @@ file (GLOB TOP_SRCS
 #
 # add PlotWindow module
 #
+if( DISPLAY_PLOT )
+message( STATUS "Displaying plot: ON" )
+add_definitions( -DPLOT_DISPLAYING )
 SET(plotwindow_SOURCES ${PLOTDRAWING_DIR}/plotwindow.cpp ${3RDPARTY_DIR}/QCustomPlot/qcustomplot.cpp)
 SET(plotwindow_HEADERS ${PLOTDRAWING_DIR}/plotwindow.h ${3RDPARTY_DIR}/QCustomPlot/qcustomplot.h)
 SET(plotwindow_FORMS ${PLOTDRAWING_DIR}/plotwindow.ui)
@@ -62,6 +66,9 @@ set(PLOTWINDOW_SRCS
 )
 #include build directory since the ui_mainwindow.h will be generated here
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+endif()
+
+
 
 #include source file in all folder
 set(PROJECT_SRCS
@@ -70,20 +77,6 @@ set(PROJECT_SRCS
     ${PLOTWINDOW_SRCS}
     )
     
-#set the place to generate the binary file
-if( NOT CMAKE_BUILD_TYPE STREQUAL "Release" )
-set( CMAKE_BUILD_TYPE "Debug" )
-endif()
-
-if( CMAKE_BUILD_TYPE STREQUAL "Release" )
-add_definitions( -DQT_NO_DEBUG )
-add_definitions( -DQT_NO_DEBUG_OUTPUT )
-add_definitions( -O3 )
-elseif( CMAKE_BUILD_TYPE STREQUAL "Debug" )
-# add_definitions( -DQT_DEBUG )
-add_definitions( -DIPCAM_DEBUG )
-endif()
-
 # Create output folder with build type (release/debug)
 set( EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/bin/${CMAKE_BUILD_TYPE} )
 

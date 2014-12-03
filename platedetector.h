@@ -2,13 +2,16 @@
 #define PLATEDETECTOR_H
 
 #pragma once
+#include "common.h"
 #include "opencv2/core/core.hpp"
 #include <vector>
 #include <iostream>
 #include <QVector>
 #include <QPair>
+
+#if PLOT_DISPLAYING
 #include "PlotDrawing/plotwindow.h"
-#include "common.h"
+#endif
 
 /**
  * Extract region containg plate from an input image
@@ -38,8 +41,12 @@ private:
     void NormalizeVectorAndFindSegment(QVector<double>& in_vec, QVector<QPair<int, int> >& segment);
     //flood fill algorithm
     void FloodFill(const cv::Mat input_img, cv::RotatedRect& min_rect);
+
+#if PLOT_DISPLAYING
     //visualize the projection and found segment
     void Visualize();
+#endif
+
 
     //buffer to store intermediate results
     cv::Mat in_img;
@@ -56,8 +63,10 @@ private:
     //input image'size
     cv::Size img_size;
 
+#if PLOT_DISPLAYING
     PlotWindow *w;
     int n_plot, cur_plot;
+#endif
 
     double threshold;
 
