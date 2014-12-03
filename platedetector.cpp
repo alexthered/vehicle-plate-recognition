@@ -44,8 +44,11 @@ void PlateDetector::DetectPlate(const cv::Mat &_in_img, std::vector<cv::Mat>& pl
 }
 
 //Pre-process the image: grayscale conversion + Gaussian smoothing + histogram equalization
-void PlateDetector::PreprocessImg(const cv::Mat& in_img)
+void PlateDetector::PreprocessImg(const cv::Mat& _in_img)
 {
+    //copy input image
+    in_img = _in_img.clone();
+
     cvtColor(in_img, gray_img, CV_RGB2GRAY);
 
     //gaussian smoothing
@@ -101,15 +104,25 @@ void PlateDetector::DetectRegion(const cv::Mat& gray_img)
         while(iter!=contours.end()){
             //get the minimum area bounding rectangle
             RotatedRect rect = minAreaRect(Mat(*iter));
-            Rect cur_rect = rect.boundingRect();
             //crop the image region containing the plate image
-            Mat cur_plate = cur_strip (ClipRect(cur_rect, cv::Size(cur_strip.cols,cur_strip.rows)));
-            if (!VerifyRegion(cur_rect)){
-                iter = contours.erase(iter); //remove this region
-            } else {
+            if (VerifySize(rect)){
+                //perform flood fill
+                FloodFill(in_img, rect);
+                //get the bounding rectangle
+                Rect cur_rect = ClipRect(rect.boundingRect(), cv::Size(cur_strip.cols,cur_strip.rows));
+                Mat cur_plate = cur_strip(cur_rect);
                 plates.push_back(cur_plate);
                 iter++;
+            } else {
+                iter = contours.erase(iter); //erase this region
             }
+            //Mat cur_plate = cur_strip ();
+            //if (!VerifyRegion(cur_rect)){
+                //iter = contours.erase(iter); //remove this region
+            //} else {
+            //
+
+            //}
         }
     }
 
@@ -123,6 +136,53 @@ void PlateDetector::DetectRegion(const cv::Mat& gray_img)
 
     Visualize();
 }
+
+/**
+ * Perform flood fill algorithm since the background
+ * of the plate is always homogeneous (white or yellow)
+ * */
+
+void PlateDetector::FloodFill(const cv::Mat input_img, cv::RotatedRect& min_rect)
+{
+    //get the minimum size
+    int min_size = (min_rect.size.width < min_rect.size.height)?(min_rect.size.width):(min_rect.size.height);
+    //initialize rand
+    srand(time(NULL));
+
+    //initialize floodfill parameters and variables
+    cv::Mat mask = Mat(input_img.rows+2, input_img.cols+2, CV_8UC1);
+    mask = Scalar::all(0); //set mask to all 0
+
+    int loDiff = 30;
+    int upDiff = 30;
+    int connectivity = 4;
+    int newMaskVal = 255;
+    int NumSeeds = 10;
+    Rect ccomp;
+    int flags = connectivity + (newMaskVal << 8 ) + CV_FLOODFILL_FIXED_RANGE + CV_FLOODFILL_MASK_ONLY;
+    for(int j=0; j<NumSeeds; j++){
+        Point seed;
+        seed.x=min_rect.center.x+rand()%(int)min_size-(min_size/2);
+        seed.y=min_rect.center.y+rand()%(int)min_size-(min_size/2);
+        int area = floodFill(input_img, mask, seed, Scalar(255,0,0), &ccomp, Scalar(loDiff, loDiff, loDiff), Scalar(upDiff, upDiff, upDiff), flags);
+    }
+
+#if VERBOSE_MODE
+    cv::imshow("Mask from flood fill", mask);
+#endif
+
+    //Check new floodfill mask match for a correct patch.
+    //Get all points detected for get Minimal rotated Rect
+    vector<Point> pointsInterest;
+    Mat_<uchar>::iterator itMask= mask.begin<uchar>();
+    Mat_<uchar>::iterator end= mask.end<uchar>();
+    for( ; itMask!=end; ++itMask)
+        if(*itMask==255)
+            pointsInterest.push_back(itMask.pos());
+    //adjust the new rotated rect
+    min_rect = minAreaRect(pointsInterest);
+}
+
 /**
  * @brief PlateDetector::NormalizeVectorAndFindSegment
  * Normalize the projection vector and at the same time,
@@ -204,21 +264,23 @@ int PlateDetector::VerifySegment(const QPair<int, int> in_pair){
 }
 
 //verify if a region is possible to contain a plate
-int PlateDetector::VerifyRegion(const cv::Rect rect)
+int PlateDetector::VerifySize(const cv::RotatedRect rect)
 {
+    if (rect.size.width == 0 || rect.size.height == 0)
+        return 0;
     //get the width-height ratio
-    float ratio = float(rect.width)/float(rect.height);
+    float ratio = float(rect.size.width)/float(rect.size.height);
     if (ratio < 1)
         ratio = 1.0/ratio;
 
-    if (ratio < 5 || ratio > 7)
+    if (ratio < 1 || ratio > 9)
         return 0;
 
 
     //minimum area condition (highly tuned for specific case)
-    int area = rect.width * rect.height;
+    int area = rect.size.width * rect.size.height;
     std::cout << area << std::endl;
-    if ( area < 3500 || area > 10000)
+    if ( area < 50 || area > 19000)
         return 0;
 
     return 1;

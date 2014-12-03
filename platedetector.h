@@ -27,15 +27,17 @@ public:
 private:
 
     //pre-process the input image
-    void PreprocessImg(const cv::Mat& in_img);
+    void PreprocessImg(const cv::Mat& _in_img);
     void DetectRegion(const cv::Mat& gray_img);
-    int VerifyRegion(const cv::Rect rect);
+    int VerifySize(const cv::RotatedRect rect);
     int VerifySegment(const QPair<int, int> in_pair);
     void EnlargeRect(cv::Rect& rect);
     //calculate the sum of each row or column
     void CalDimSum(const cv::Mat gra_img, QVector<double>& dim_sum, int dim);
     //normalize the projection of gradient image
     void NormalizeVectorAndFindSegment(QVector<double>& in_vec, QVector<QPair<int, int> >& segment);
+    //flood fill algorithm
+    void FloodFill(const cv::Mat input_img, cv::RotatedRect& min_rect);
     //visualize the projection and found segment
     void Visualize();
 
