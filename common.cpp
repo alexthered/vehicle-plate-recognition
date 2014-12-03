@@ -14,6 +14,19 @@ cv::Rect ClipRect(cv::Rect rect, cv::Size img_size)
     return clipped_rect;
 }
 
+//check if two rectangles are similar or not
+bool IsSimilarRect(const cv::Rect rect1, const cv::Rect rect2)
+{
+    cv::Rect intersect_rect = rect1 & rect2;
+
+    double union_area = double(rect1.area() + rect2.area() - intersect_rect.area());
+
+    if ((double(intersect_rect.area())/union_area) > 0.75)
+        return true;
+    else
+        return false;
+}
+
 
 void AvgFilter(QVector<double>& in_vec, int filter_size,
                                double& minVal, double& maxVal)
