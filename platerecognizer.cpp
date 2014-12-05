@@ -1,4 +1,5 @@
 #include "platerecognizer.h"
+#include "common.h"
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <string>
@@ -14,11 +15,20 @@ PlateRecognizer::PlateRecognizer()
 }
 
 
-void PlateRecognizer::RecognizePlate(const cv::Mat& in_plate, std::string& content_plate)
+void PlateRecognizer::RecognizePlate(const cv::Mat& _in_plate, std::string& content_plate)
 {
+    in_plate = _in_plate.clone();
+
     cvtColor(in_plate, gray_plate, CV_RGB2GRAY);
+
+    //histogram equalization to boost the constrast
+    cv::equalizeHist(gray_plate, gray_plate);
+
+    //a simple thresholding
+    cv::threshold(gray_plate, threshold_gray_plate, 65, 255, CV_THRESH_BINARY_INV);
+
     //extract character's images
-    ExtractCharacterImages(gray_plate);
+    ExtractCharacterImages();
 
 #if VERBOSE_MODE
     cv::imshow("Gray image of plate", gray_plate);
@@ -27,11 +37,8 @@ void PlateRecognizer::RecognizePlate(const cv::Mat& in_plate, std::string& conte
 }
 
 //separate each character's image from the whole plate image
-void PlateRecognizer::ExtractCharacterImages(const cv::Mat& in_plate_gray)
+void PlateRecognizer::ExtractCharacterImages()
 {
-    //a simple thresholding
-    cv::threshold(in_plate_gray, threshold_gray_plate, 60, 255, CV_THRESH_BINARY_INV);
-
     //find connected components
     vector< vector<Point> > contours;
     findContours(threshold_gray_plate.clone(), contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
@@ -42,7 +49,7 @@ void PlateRecognizer::ExtractCharacterImages(const cv::Mat& in_plate_gray)
         RotatedRect rect = minAreaRect(Mat(*iter));
         Rect cur_rect = rect.boundingRect();
         //crop the image region containing the plate image
-        Mat character= threshold_gray_plate(cur_rect);
+        Mat character= in_plate(ClipRect(cur_rect, Size(gray_plate.cols, gray_plate.rows)));
         if (!VerifyCharacterRegion(character)){
             iter = contours.erase(iter); //remove this region
         } else {
@@ -53,9 +60,9 @@ void PlateRecognizer::ExtractCharacterImages(const cv::Mat& in_plate_gray)
 
 #if VERBOSE_MODE
     for (int i=0; i<character_imgs.size(); i++){
-        char window_name[100];
-        sprintf(window_name, "extracted character %d from plate image", i+1);
-        cv::imshow(window_name, character_imgs[i]);
+        QString idx = QString::number(i);
+        QString win_name = "Extracted character " + idx + " from plate image";
+        cv::imshow(win_name.toStdString(), character_imgs[i]);
     }
 #endif
 }
@@ -68,7 +75,7 @@ int PlateRecognizer::VerifyCharacterRegion(const cv::Mat character_img)
         ratio = 1.0/ratio;
 
     //ratio test
-    if (ratio < 0.5 || ratio > 3)
+    if (ratio < 0.2 || ratio > 8)
         return 0;
 
     float area = float(character_img.rows)*float(character_img.cols);
