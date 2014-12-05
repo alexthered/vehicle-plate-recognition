@@ -19,6 +19,10 @@
 
 cv::Rect ClipRect(cv::Rect rect, cv::Size img_size);
 
+cv::Rect StripRectToImageRect(const cv::Rect in_rect, const cv::Rect strip_rect);
+
+cv::RotatedRect StripRotatedRectToImageRotatedRect(const cv::RotatedRect in_rect, const cv::Rect strip_rect);
+
 bool IsSimilarRect(const cv::Rect rect1, const cv::Rect rect2);
 
 void AvgFilter(QVector<double>& in_vec, int filter_size,

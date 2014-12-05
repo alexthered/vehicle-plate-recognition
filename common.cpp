@@ -28,6 +28,31 @@ bool IsSimilarRect(const cv::Rect rect1, const cv::Rect rect2)
 }
 
 
+//convert the rectangle's coordinate from strip to origin image
+cv::Rect StripRectToImageRect(const cv::Rect in_rect, const cv::Rect strip_rect)
+{
+    cv::Rect out_rect;
+    out_rect.x = in_rect.x + strip_rect.x;
+    out_rect.y = in_rect.x + strip_rect.y;
+    out_rect.width = in_rect.width;
+    out_rect.height = in_rect.height;
+
+    return out_rect;
+}
+
+//convert the rectangle's coordinate from strip to origin image
+cv::RotatedRect StripRotatedRectToImageRotatedRect(const cv::RotatedRect in_rect, const cv::Rect strip_rect)
+{
+    cv::RotatedRect out_rect;
+    out_rect.center.x = in_rect.center.x + strip_rect.x;
+    out_rect.center.y = in_rect.center.y + strip_rect.y;
+    out_rect.size.width = in_rect.size.width;
+    out_rect.size.height = in_rect.size.height;
+
+    return out_rect;
+}
+
+
 void AvgFilter(QVector<double>& in_vec, int filter_size,
                                double& minVal, double& maxVal)
 {
