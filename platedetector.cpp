@@ -34,10 +34,10 @@ void PlateDetector::DetectPlate(const cv::Mat &_in_img, std::vector<cv::Mat>& pl
     img_size =  Size(in_img.cols, in_img.rows); //get input image'size
 
     PreprocessImg(in_img);
-    DetectRegion(gray_img);
+    DetectRegion();
 
     //copy plate image to output file
-    plate_img = cand_plates;
+    plate_img = plates;
 
 #if VERBOSE_MODE //show all intermediate results
     //cv::imshow("grayscale image after Gaussian blur", gray_img);
@@ -60,7 +60,7 @@ void PlateDetector::PreprocessImg(const cv::Mat& _in_img)
 }
 
 //detect regions which are possible to contain plate
-void PlateDetector::DetectRegion(const cv::Mat& gray_img)
+void PlateDetector::DetectRegion()
 {
     //apply sobel filter to reveal horizontal and vertical gradient image
     Sobel(gray_img, x_sobel_img, CV_8U, 1, 0, 3, 1, 0);
@@ -73,24 +73,29 @@ void PlateDetector::DetectRegion(const cv::Mat& gray_img)
     //normalize the result
     NormalizeVectorAndFindSegment(row_sum, row_segment);
 
-
+    /**
+     * First step: Detect image strips which can contain the plate
+     *
+     * */
     //get all possible strip regions which can contain plates
     for (int i=0; i<row_segment.size(); ++i){
         QPair<int, int> row_range = row_segment[i];
-        //QPair<int, int> col_range = col_segment[j];
-
-        cv::Mat cur_plate = gray_img(Rect(0, row_range.first,
-                                        in_img.cols - 1,
-                                        row_range.second - row_range.first));
-        cand_plates.push_back(cur_plate);
+        //rectangle containing strip region
+        cv::Rect cur_rect = Rect(0, row_range.first,
+                                  in_img.cols - 1,
+                                  row_range.second - row_range.first);
+        cand_plates.push_back(cur_rect);
     }
 
     /**
-     * for each possible strip gray image, find the region which can
+     * Second step:
+     * for each possible strip image, find the region which can
      * be a plate image
      */
     for(int i=0; i<cand_plates.size(); ++i){
-        cv::Mat cur_strip = cand_plates[i];
+        vector<Rect> strip_plate;
+        //get the strip image from input gray image
+        cv::Mat cur_strip = gray_img(cand_plates[i]);
         //apply sobel operator
         Sobel(cur_strip, sobel_strip, CV_8U, 1, 0, 3, 1, 0);
         //Otsu thresholding
@@ -102,31 +107,44 @@ void PlateDetector::DetectRegion(const cv::Mat& gray_img)
 
         //collect connected components
         vector< vector<Point> > contours;
-        findContours(threshold_strip .clone(), contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
+        findContours(threshold_strip.clone(), contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
         //iterate over the list of contour and find the bounding rectangle
         vector< vector<Point> >::iterator iter = contours.begin();
         while(iter!=contours.end()){
-            //get the minimum area bounding rectangle
-            RotatedRect rect = minAreaRect(Mat(*iter));
+            //get the minimum area bounding rectangle and convert to original image's coordinate
+            RotatedRect rect = StripRotatedRectToImageRotatedRect(minAreaRect(Mat(*iter)), cand_plates[i]);
             //crop the image region containing the plate image
-            if (VerifySize(rect)){
+            if (rect.size.width * rect.size.height >= 500){
                 //perform flood fill
                 FloodFill(in_img, rect);
-                //get the bounding rectangle
-                Rect cur_rect = ClipRect(rect.boundingRect(), cv::Size(cur_strip.cols,cur_strip.rows));
-                Mat cur_plate = cur_strip(cur_rect);
-                plates.push_back(cur_plate);
-                iter++;
-            } else {
-                iter = contours.erase(iter); //erase this region
+                //get the bounding rectangle and convert it to original image's coordinate (with clipping)
+                Rect cur_rect = ClipRect(rect.boundingRect(),
+                                         cv::Size(gray_img.cols,gray_img.rows));
+                if (VerifySize(cur_rect)){
+                    strip_plate.push_back(cur_rect);
+                }
             }
-            //Mat cur_plate = cur_strip ();
-            //if (!VerifyRegion(cur_rect)){
-                //iter = contours.erase(iter); //remove this region
-            //} else {
-            //
+            iter = contours.erase(iter); //erase this region
+        }
 
-            //}
+        //remove overlapping regions in this strip
+        while(strip_plate.size()!=0){
+            vector<Rect>::iterator iter_i = strip_plate.begin();
+            vector<Rect>::iterator iter_j = strip_plate.begin();
+            iter_j++;
+            while(iter_j!= strip_plate.end()){
+                //compare if two region is similar
+                if (IsSimilarRect((*iter_i),(*iter_j))){
+                    (*iter_i) |= (*iter_j); //grouping
+                    strip_plate.erase(iter_j); //delete it
+                } else
+                    iter_j++;
+            }
+            //get the plate image
+            std::cout << ((*iter_i).x) << " " << ((*iter_i).y) << " " << ((*iter_i).width) << " " <<((*iter_i).height) << std::endl;
+            Mat cur_plate = in_img((*iter_i));
+            plates.push_back(cur_plate);
+            strip_plate.erase(iter_i); //delete iter_i
         }
     }
 
@@ -175,7 +193,7 @@ void PlateDetector::FloodFill(const cv::Mat input_img, cv::RotatedRect& min_rect
     }
 
 #if VERBOSE_MODE
-    cv::imshow("Mask from flood fill", mask);
+    //cv::imshow("Mask from flood fill", mask);
 #endif
 
     //Check new floodfill mask match for a correct patch.
@@ -273,23 +291,18 @@ int PlateDetector::VerifySegment(const QPair<int, int> in_pair){
 }
 
 //verify if a region is possible to contain a plate
-int PlateDetector::VerifySize(const cv::RotatedRect rect)
+int PlateDetector::VerifySize(const cv::Rect rect)
 {
-    if (rect.size.width == 0 || rect.size.height == 0)
+    //max width and height size requirement
+    int min_size = (rect.width < rect.height) ? rect.width : rect.height;
+    if (min_size > 100)
         return 0;
     //get the width-height ratio
-    float ratio = float(rect.size.width)/float(rect.size.height);
+    float ratio = float(rect.width)/float(rect.height);
     if (ratio < 1)
         ratio = 1.0/ratio;
 
-    if (ratio < 1 || ratio > 9)
-        return 0;
-
-
-    //minimum area condition (highly tuned for specific case)
-    int area = rect.size.width * rect.size.height;
-    std::cout << area << std::endl;
-    if ( area < 50 || area > 19000)
+    if (ratio < 2 || ratio >15)
         return 0;
 
     return 1;

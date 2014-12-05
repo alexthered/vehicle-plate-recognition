@@ -31,8 +31,8 @@ private:
 
     //pre-process the input image
     void PreprocessImg(const cv::Mat& _in_img);
-    void DetectRegion(const cv::Mat& gray_img);
-    int VerifySize(const cv::RotatedRect rect);
+    void DetectRegion();
+    int VerifySize(const cv::Rect rect);
     int VerifySegment(const QPair<int, int> in_pair);
     void EnlargeRect(cv::Rect& rect);
     //calculate the sum of each row or column
@@ -55,7 +55,7 @@ private:
     cv::Mat x_sobel_img, y_sobel_img; //horizontal and vertical gradient image
     cv::Mat threshold_strip, sobel_strip;
 
-    std::vector<cv::Mat> cand_plates; //candidate plates (after first step)
+    std::vector<cv::Rect> cand_plates; //rectangular position of candidate plates (after first step)
     std::vector<cv::Mat> plates;      //detected plates (after second step)
 
     //other constants
@@ -70,8 +70,8 @@ private:
 
     double threshold;
 
-    QVector<double> col_sum, row_sum;
-    QVector<QPair<int, int> > col_segment, row_segment;
+    QVector<double> row_sum;
+    QVector<QPair<int, int> > row_segment;
 };
 
 #endif // IMGPREPROCESSOR_H
