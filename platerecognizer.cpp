@@ -1,5 +1,6 @@
 #include "platerecognizer.h"
 #include "common.h"
+#include <QString>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <string>
@@ -11,14 +12,11 @@ using namespace std;
 //ctor
 PlateRecognizer::PlateRecognizer()
 {
-
+    counter = 0;
 }
 
-
-void PlateRecognizer::RecognizePlate(const cv::Mat& _in_plate, std::string& content_plate)
+void PlateRecognizer::Preprocess()
 {
-    in_plate = _in_plate.clone();
-
     cvtColor(in_plate, gray_plate, CV_RGB2GRAY);
 
     //histogram equalization to boost the constrast
@@ -27,6 +25,15 @@ void PlateRecognizer::RecognizePlate(const cv::Mat& _in_plate, std::string& cont
     //a simple thresholding
     cv::threshold(gray_plate, threshold_gray_plate, 65, 255, CV_THRESH_BINARY_INV);
 
+}
+
+void PlateRecognizer::RecognizePlate(const cv::Mat& _in_plate, std::string& content_plate)
+{
+    in_plate = _in_plate.clone();
+
+    //pre-process the plate image
+    Preprocess();
+
     //extract character's images
     ExtractCharacterImages();
 
@@ -34,6 +41,26 @@ void PlateRecognizer::RecognizePlate(const cv::Mat& _in_plate, std::string& cont
     cv::imshow("Gray image of plate", gray_plate);
     cv::imshow("Gray image of plate after thresholding", threshold_gray_plate);
 #endif
+}
+
+void PlateRecognizer::SaveCharacterImg(const cv::Mat& _in_plate, const std::string& output_dir)
+{
+    in_plate = _in_plate.clone();
+
+    //pre-process the plate image
+    Preprocess();
+    ExtractCharacterImages();
+
+    for (int i=0; i<character_imgs.size(); i++){
+        QString img_idx = QString("digit_img") + QString::number(counter);
+
+        //image path
+        const std::string img_path = output_dir + "/" + img_idx.toStdString() + ".jpg";
+        imwrite(img_path, character_imgs[i]);
+
+        //increase the counter value
+        counter++;
+    }
 }
 
 //separate each character's image from the whole plate image

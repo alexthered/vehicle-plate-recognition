@@ -17,13 +17,18 @@ public:
     PlateRecognizer();
 
     void RecognizePlate(const cv::Mat& in_plate, std::string& content_plate);
+    void SaveCharacterImg(const cv::Mat& _in_plate, const std::string& output_dir);
 
 private:
     void ExtractCharacterImages();
     int VerifyCharacterRegion(const cv::Mat character_img);
+    void Preprocess();
+
 
     cv::Mat gray_plate, threshold_gray_plate, in_plate;
     std::vector<cv::Mat> character_imgs;
+
+    int counter;
 };
 
 #endif // PLATERECOGNIZER_H
