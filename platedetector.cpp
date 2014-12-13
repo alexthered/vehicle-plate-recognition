@@ -4,6 +4,7 @@
 #include <QApplication>
 #include <QPair>
 #include <QString>
+#include <QtGlobal>
 
 using namespace std;
 using namespace cv;
@@ -103,7 +104,7 @@ void PlateDetector::DetectRegion()
         //apply closing operator
         cv::Mat ele = cv::getStructuringElement(MORPH_RECT, Size(15,3));
         morphologyEx(threshold_strip, threshold_strip, CV_MOP_CLOSE, ele);
-        cv::imshow("strip region", threshold_strip);
+        //cv::imshow("strip region", threshold_strip);
 
         //collect connected components
         vector< vector<Point> > contours;
@@ -141,7 +142,6 @@ void PlateDetector::DetectRegion()
                     iter_j++;
             }
             //get the plate image
-            std::cout << ((*iter_i).x) << " " << ((*iter_i).y) << " " << ((*iter_i).width) << " " <<((*iter_i).height) << std::endl;
             Mat cur_plate = in_img((*iter_i));
             plates.push_back(cur_plate);
             strip_plate.erase(iter_i); //delete iter_i
@@ -216,6 +216,9 @@ void PlateDetector::FloodFill(const cv::Mat input_img, cv::RotatedRect& min_rect
  */
 void PlateDetector::NormalizeVectorAndFindSegment(QVector<double>& in_vec, QVector<QPair<int, int> >& segment)
 {
+    //make sure the size of in_vec is equal to original image's row number
+    Q_ASSERT(in_vec.size() == gray_img.rows);
+
     double maxVal = 0, minVal = 1000000;
     //Apply median filter
     //MedianFilter(in_vec, 5, minVal, maxVal);
@@ -232,7 +235,7 @@ void PlateDetector::NormalizeVectorAndFindSegment(QVector<double>& in_vec, QVect
         if (in_vec[i] < threshold && in_segment) {  //end the segment
             cur_segment.second = i;
             in_segment = false;
-            if (VerifySegment(cur_segment))
+            if (VerifySegment(cur_segment, 0, in_vec.size()))
                 segment.push_back(cur_segment);  //store the found segment
         }
     }
@@ -242,6 +245,8 @@ void PlateDetector::NormalizeVectorAndFindSegment(QVector<double>& in_vec, QVect
 void PlateDetector::CalDimSum(const cv::Mat gra_img, QVector<double>& dim_sum, int dim)
 {
     Mat img;
+    //clear the dim_sum
+    dim_sum.clear();
     if (dim == 0) //calculate sum of each row
         img = gra_img.clone();
     else if (dim == 1) //calculate sum of each column -> transpose input
@@ -284,8 +289,10 @@ void PlateDetector::Visualize()
 #endif
 
 //verify if a found segment is valid or not
-int PlateDetector::VerifySegment(const QPair<int, int> in_pair){
-    if ((in_pair.second - in_pair.first) < 25)
+int PlateDetector::VerifySegment(const QPair<int, int> in_pair, int minVal, int maxVal){
+    if (in_pair.first < minVal || in_pair.second > maxVal)
+        return 0;
+    if ((in_pair.second - in_pair.first) < 25 || (in_pair.second - in_pair.first > 100))
         return 0;
     return 1;
 }

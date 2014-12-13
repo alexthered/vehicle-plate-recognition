@@ -33,7 +33,7 @@ private:
     void PreprocessImg(const cv::Mat& _in_img);
     void DetectRegion();
     int VerifySize(const cv::Rect rect);
-    int VerifySegment(const QPair<int, int> in_pair);
+    int VerifySegment(const QPair<int, int> in_pair, int minVal, int maxVal);
     void EnlargeRect(cv::Rect& rect);
     //calculate the sum of each row or column
     void CalDimSum(const cv::Mat gra_img, QVector<double>& dim_sum, int dim);
